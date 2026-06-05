@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hệ Thống Luận Giải Lục Hào Chuyên Sâu</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.6.12/lunar.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    :root { --purple: #8b008b; --blue: #1b4d82; --red: #d32f2f; --gold: #b8860b; --green: #2e7d32; --text-main: #222; --text-gray: #555; --bg-body: #ebf0f4; --grid-gap: clamp(2px, .45vw, 6px); --panel-pad: clamp(5px, .55vw, 10px); --safe-bottom: env(safe-area-inset-bottom, 0px); --vh: 1vh; }
+    html { font-size: 12px; -webkit-text-size-adjust: 100%; text-size-adjust: 100% }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); padding: clamp(2px, .45vw, 6px); min-height: 100vh; overflow-x: hidden; line-height: 1.18; }
+    b, strong { font-weight: 600 }
+    .bold { font-weight: 600 }
+    .c-text-gray { color: #888; font-weight: 600 }
+    #setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100dvh - 10px) }
+    .form-section { background: #fff; padding: 20px 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, .05); width: 100%; max-width: 480px; border-top: 4px solid var(--blue) }
+    .form-section h2 { font-size: 16px; margin-bottom: 12px; color: var(--blue); text-align: center; text-transform: uppercase; font-weight: 700 }
+    .form-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap }
+    .form-row label { white-space: nowrap; font-size: 13px; font-weight: 600 }
+    .viec-input { flex: 1; min-width: 160px; width: 100%; border: 1px solid #ccc; padding: 6px 10px; font-size: 13px; border-radius: 4px; height: 32px; }
+    .hao-table { border-collapse: collapse; margin-bottom: 15px; width: 100% }
+    .hao-table th, .hao-table td { padding: 8px 4px; text-align: left; vertical-align: middle; font-size: 13px; border-bottom: 1px solid #eee }
+    .hao-table select { border: 1px solid #ccc; padding: 4px 8px; font-size: 13px; background: #fff; border-radius: 4px; width: 100%; min-width: 130px; height: 32px; font-family: inherit; box-sizing: border-box }
+    .hao-table input[type=checkbox] { width: 18px; height: 18px; cursor: pointer }
+    .date-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #eee }
+    .date-row select { border: 1px solid #ccc; padding: 4px 8px; font-size: 13px; background: #fff; border-radius: 4px; cursor: pointer; height: 32px; font-family: inherit; min-width: 70px }
+    .btn-lap { background: var(--blue); color: #fff; padding: 10px 15px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 6px; border: none; width: 100%; text-transform: uppercase }
+    #dashboard-screen { display: none; flex-direction: column; max-width: 1720px; margin: 0 auto; width: 100% }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 5px; position: sticky; top: 0; z-index: 50; background: rgba(235, 240, 244, .94); backdrop-filter: blur(8px); }
+    .dashboard-header h1 { font-size: clamp(12px, 1.1vw, 16px); color: var(--blue); text-transform: uppercase; font-weight: 700; margin: 0; letter-spacing: .2px }
+    .btn-recast { background: #fff; color: var(--text-main); border: 1px solid #dcdfe4; padding: 4px 10px; border-radius: 5px; font-weight: 600; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px }
+    .app-grid { display: grid; grid-template-columns: minmax(0, 6.5fr) minmax(320px, 3.5fr); grid-template-areas: "m1 m2" "m3 m5" "m4 m5"; gap: var(--grid-gap); background: #dcdfe4; border: 1px solid #dcdfe4; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, .05); overflow: visible; align-items: start; }
+    .panel { background: #fff; display: flex; flex-direction: column; height: auto; min-width: 0; overflow: visible }
+    .panel-title { background: #fbfcfd; padding: 5px 8px; font-weight: 700; font-size: clamp(10px, .75vw, 11.5px); color: var(--blue); border-bottom: 1px solid #f0f2f5; text-transform: uppercase; line-height: 1.15 }
+    .panel-content { padding: var(--panel-pad); flex: 1; min-width: 0; overflow: visible }
+    .mang-1 { grid-area: m1 } .mang-2 { grid-area: m2 } .mang-3 { grid-area: m3 } .mang-4 { grid-area: m4 } .mang-5 { grid-area: m5 }
+    .note-textarea { width: 100%; height: clamp(84px, 15dvh, 150px); min-height: 72px; resize: vertical; border: 1px solid #ccc; border-radius: 4px; padding: 7px; font-size: clamp(10px, .9vw, 11.5px); font-family: inherit; color: var(--text-main); background: #fafbfc; outline: none; line-height: 1.35 }
+    .note-textarea:focus { border-color: var(--blue); background: #fff }
+    .placeholder-content { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 50px; color: #a0a5aa; font-style: italic; background: #fafbfc; border-radius: 4px; font-size: 11px; padding: 10px }
+    #result-area { width: 100%; max-width: 100%; margin: 0 }
+    #capture-area, #capture-zone { max-width: 100%; width: 100% }
+    .dq-container { width: 100%; border: 1px solid #ebedf0; padding: clamp(5px, .65vw, 12px); background: #fff; border-radius: 6px; box-shadow: 0 1px 5px rgba(0, 0, 0, .02) }
+    .dq-header-title { font-size: clamp(11px, 1vw, 15px); font-weight: 700; margin-bottom: 4px; color: #111; letter-spacing: .4px; text-transform: uppercase; text-align: left; padding-left: 2px; }
+    .dq-info-wrap { font-size: clamp(8.2px, .78vw, 11.5px); margin-bottom: 5px; color: var(--text-main) }
+    .dq-info-row { display: flex; flex-wrap: wrap; margin-bottom: 2px; align-items: baseline }
+    .dq-info-label { color: var(--text-gray); min-width: clamp(50px, 6.5vw, 80px); display: inline-block }
+    .dq-info-inline { display: flex; gap: clamp(4px, .75vw, 10px); flex-wrap: wrap; margin-bottom: 2px }
+    .dq-info-inline-item { display: flex; gap: 3px }
+    .dq-purple-text { color: var(--purple); font-weight: 600 }
+    .dq-divider { border: 0; border-top: 1px dashed #ddd; margin: 5px 0 }
+    .dq-title-row { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-weight: 700; color: var(--purple); font-size: clamp(10px, .9vw, 13px); margin-bottom: 5px; text-transform: uppercase; gap: 2px }
+    .dq-big-diagrams { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 5px }
+    .dq-big-hex { display: flex; flex-direction: column; align-items: center; gap: 3px }
+    .dq-b-yang { width: clamp(38px, 4.2vw, 50px); height: clamp(4px, .48vw, 6px); background: var(--blue); border-radius: 1px }
+    .dq-b-yin { width: clamp(38px, 4.2vw, 50px); height: clamp(4px, .48vw, 6px); display: flex; justify-content: space-between }
+    .dq-b-yin::before, .dq-b-yin::after { content: ''; width: 40%; height: 100%; background: var(--blue); border-radius: 1px }
+    .dq-b-yang.dq-red { background: var(--red) }
+    .dq-b-yin.dq-red::before, .dq-b-yin.dq-red::after { background: var(--red) }
+    .dq-subtitle-row { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: clamp(8px, .72vw, 10.5px); color: var(--text-gray); margin-bottom: 2px; text-transform: uppercase }
+    .dq-loitrierow { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: clamp(8.5px, .78vw, 11.5px); font-weight: 600; color: #111; margin-bottom: 6px; text-transform: uppercase }
+    .dq-table-wrap { width: 100%; border-top: 1px solid #eee; border-bottom: 1px solid #eee; overflow: visible; padding: 1px 0 }
+    .dq-main-table { width: 100%; border-collapse: collapse; font-size: clamp(6.8px, .72vw, 11.5px); min-width: 0; table-layout: fixed }
+    .dq-main-table th { padding: clamp(1px, .25vw, 4px) 1px; font-weight: 600; border-bottom: 1px solid #eee; color: #222; text-align: center; white-space: normal; line-height: 1.05 }
+    .dq-main-table td { padding: clamp(1px, .22vw, 3px) 1px; vertical-align: middle; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.12 }
+    .dq-main-table tbody tr { border-bottom: 1px dashed #f7f7f7 }
+    .dq-main-table tbody tr:last-child { border-bottom: none }
+    .col-split { border-left: 1px solid #dcdfe4 }
+    .text-left { text-align: left !important; padding-left: 2px !important }
+    .tk-mark { color: var(--gold); font-weight: 600 }
+    .qt-mark { color: var(--purple); font-weight: 600 }
+    .dq-row-red td, .dq-row-red .text-left { font-weight: 600 }
+    .dq-row-red .dq-s-yang { background: var(--red) }
+    .dq-row-red .dq-s-yin::before, .dq-row-red .dq-s-yin::after { background: var(--red) }
+    .c-moc { color: #2e7d32; font-weight: 600 } .c-hoa { color: #d32f2f; font-weight: 600 } .c-tho { color: #b8860b; font-weight: 600 } .c-kim { color: #607d8b; font-weight: 600 } .c-thuy { color: #1565c0; font-weight: 600 }
+    .vs-vuong { color: #d32f2f; font-weight: 700 } .vs-tuong { color: #e65100; font-weight: 700 } .vs-huu { color: #2e7d32; font-weight: 600 } .vs-tu { color: #607d8b; font-weight: 600 } .vs-tu2 { color: #777; font-weight: 600 }
+    .dq-s-wrap { display: flex; justify-content: center; align-items: center }
+    .dq-s-yang { width: clamp(12px, 1.5vw, 18px); height: 3px; background: var(--blue); border-radius: 1px }
+    .dq-s-yin { width: clamp(12px, 1.5vw, 18px); height: 3px; display: flex; justify-content: space-between }
+    .dq-s-yin::before, .dq-s-yin::after { content: ''; width: 39%; height: 100%; background: var(--blue); border-radius: 1px }
+    .dq-footer { text-align: center; font-size: clamp(8px, .65vw, 10px); color: #999; font-style: italic; margin-top: 5px }
+    .btn-export { background: #f1f7fc; color: #1b4d82; border: 1px solid #d4e3f3; padding: 6px 15px; border-radius: 6px; font-weight: 600; font-size: 11.5px; cursor: pointer; margin-top: 6px; width: 100%; display: block; box-shadow: 0 1px 3px rgba(0, 0, 0, .02) }
+    #mang2-content { display: flex; flex-direction: column }
+    .m2-section, .m5-section { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #eee; min-width: 0 }
+    .m2-section:last-child, .m5-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0 }
+    .m2-h3, .m5-h3 { font-size: clamp(10px, .78vw, 11.5px); font-weight: 700; color: var(--blue); margin-bottom: 3px; display: flex; align-items: center; line-height: 1.15 }
+    .m2-h3::before, .m5-h3::before { content: ''; display: inline-block; width: 3px; height: 10px; background: var(--red); margin-right: 4px; border-radius: 2px; flex: 0 0 auto }
+    .m2-select { width: 100%; padding: 4px; border: 1px solid #dcdfe4; border-radius: 4px; font-size: clamp(9px, .72vw, 11px); background: #fff; cursor: pointer }
+    .m2-box { background: #fcfdfe; border: 1px solid #eef1f5; border-radius: 4px; padding: 4px 6px; margin-bottom: 4px }
+    .m2-box-title { font-weight: 600; margin-bottom: 2px; color: #333; font-size: clamp(9px, .72vw, 11px) }
+    .m2-text, .m5-text { font-size: clamp(9px, .72vw, 11px); line-height: 1.28; color: #222; min-width: 0 }
+    .m2-text ul, .m5-text ul { padding-left: 14px; margin-top: 2px; margin-bottom: 0 }
+    .m2-text li, .m5-text li { margin-bottom: 2px }
+    .badge-vuong { background: #eef7eb; color: #2e7d32; padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: 600; border: 1px solid #d3ebd3 }
+    .badge-suy { background: #faeded; color: #c62828; padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: 600; border: 1px solid #f3d6d6 }
+    .badge-binh { background: #fff9e6; color: #f57f17; padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: 600; border: 1px solid #fbeeb3 }
+    .m2-list-ntkt { margin: 2px 0 0 6px; font-size: clamp(9px, .72vw, 11px); color: #444; list-style-type: square }
+    .m2-list-ntkt li { margin-bottom: 2px }
+    .color-ok { color: var(--green); font-weight: 600 } .color-bad { color: var(--red); font-weight: 600 } .color-warn { color: var(--gold); font-weight: 600 }
+    .m5-highlight { background: #fff3e0; padding: 0 3px; border-radius: 2px; font-weight: 600; color: #e65100; border: 1px solid #ffe082 }
+    .m5-p { margin-bottom: 4px } .m5-p:last-child { margin-bottom: 0 }
+    #sel-chu-de { width: 100%; padding: 5px; border: 1px solid #dcdfe4; border-radius: 4px; font-size: clamp(9px, .72vw, 11px); background: #fff; cursor: pointer; margin: 6px 0 4px }
+    .cd-content-box { background: #fcfdfe; border: 1px solid #eef1f5; border-radius: 4px; padding: 6px; margin-top: 4px; max-height: 50vh; overflow-y: auto }
+    .cd-content-box ul { padding-left: 16px; margin-top: 4px; margin-bottom: 0; }
+    .cd-content-box li { margin-bottom: 4px; line-height: 1.3; }
+    .mang-3 .panel-title { position: relative; }
+    .btn-export-pdf { position: absolute; top: 3px; right: 6px; background: #fff; color: #1b4d82; border: 1px solid #dcdfe4; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-size: 9.5px; cursor: pointer; z-index: 5; display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+    .btn-export-pdf:hover { background: #f0f6fc; border-color: #1b4d82; }
+    #note-render-hidden { position: absolute; left: -9999px; top: 0; width: 700px; background: #ffffff; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #222; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+
+    @media (min-width:901px) and (max-width:1250px) { .app-grid { grid-template-columns: minmax(0, 1.18fr) minmax(270px, .72fr) minmax(270px, .82fr); grid-template-areas: "m1 m2 m5" "m3 m2 m5" "m4 m4 m5" } .note-textarea { height: clamp(76px, 13dvh, 130px) } .panel-title { padding: 4px 7px } .panel-content { padding: 5px 7px } }
+    @media (min-width:651px) and (max-width:900px) { .app-grid { grid-template-columns: minmax(0, 1.32fr) minmax(260px, .92fr); grid-template-areas: "m1 m2" "m3 m2" "m5 m4"; border-radius: 8px } .dashboard-header h1 { font-size: 13px } .panel-title { padding: 4px 7px } .panel-content { padding: 5px 7px } .note-textarea { height: clamp(82px, 14dvh, 140px) } .dq-main-table { font-size: clamp(7px, .95vw, 10.2px) } .m2-text, .m5-text { font-size: clamp(9px, .9vw, 10.5px) } }
+    @media (max-width:650px) { body { padding: 3px } .dashboard-header { padding: 2px 2px 4px; gap: 4px } .dashboard-header h1 { font-size: 12px; line-height: 1.1 } .btn-recast { font-size: 11px; padding: 3px 8px } .app-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); grid-template-areas: "m1 m2" "m3 m3" "m5 m5" "m4 m4"; gap: 5px; background: transparent; border: none; box-shadow: none; border-radius: 0 } .panel { border: 1px solid #e4e7ec; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, .03); overflow: visible } .panel-title { font-size: 10px; padding: 4px 6px } .panel-content { padding: 5px } .dq-container { padding: 5px } .dq-info-wrap { font-size: 8.2px } .dq-main-table { font-size: 6.8px } .m2-text, .m5-text { font-size: 9px; line-height: 1.22 } .m2-h3, .m5-h3 { font-size: 9.8px } .m2-select { font-size: 9px; padding: 3px } .note-textarea { height: clamp(72px, 13dvh, 110px); min-height: 68px; font-size: 10px } }
+    @media (max-width:480px) and (orientation:portrait) { body { padding: 2px } .dashboard-header { position: sticky; top: 0; padding: 2px } .dashboard-header h1 { font-size: 11px } .btn-recast { font-size: 10.5px; padding: 3px 7px } .app-grid { grid-template-columns: 1fr; grid-template-areas: "m1" "m2" "m3" "m5" "m4"; gap: 4px } .mang-3 { position: sticky; bottom: calc(var(--safe-bottom) + 2px); z-index: 40; box-shadow: 0 -4px 18px rgba(0, 0, 0, .08) } .mang-3 .panel-title { background: #fffdf0; color: #9a6500 } .note-textarea { height: clamp(78px, calc(var(--vh) * 14), 112px); min-height: 72px; font-size: 10.5px } #mang2-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px } .m2-section { margin: 0; padding-bottom: 4px } .m2-section:nth-child(1), .m2-section:nth-child(2), .m2-section:nth-child(7) { grid-column: 1 / -1 } .dq-main-table { font-size: 6.7px } }
+    @media (max-width:380px) { .dq-main-table { font-size: 6.25px } .dq-info-wrap { font-size: 7.8px } .dq-b-yang, .dq-b-yin { width: 34px; height: 4px } .dq-title-row { font-size: 9.2px } .dq-loitrierow { font-size: 8px } .panel-title { font-size: 9.5px } }
+</style>
+</head>
+
+<body>
+
+    <div id="setup-screen">
+        <div style="text-align:center;margin-bottom:20px">
+            <h1 style="color:var(--blue);font-size:24px;text-transform:uppercase">Lục Hào Bí Bộ</h1>
+            <p style="color:var(--text-gray);font-size:13px">Hệ thống an quẻ & luận giải chuyên sâu</p>
+        </div>
+
+        <div class="form-section">
+            <h2>Thiết Lập Quẻ Gieo</h2>
+            <div class="form-row" style="margin-bottom:15px">
+                <label>Việc cần xem:</label>
+                <input type="text" id="viec-can-xem" class="viec-input" placeholder="Ví dụ: Xem công danh, tài lộc...">
+            </div>
+
+            <table class="hao-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px">Hào</th>
+                        <th>Tên Hào</th>
+                        <th>Âm Dương</th>
+                        <th style="text-align:center">Động</th>
+                    </tr>
+                </thead>
+                <tbody id="hao-tbody"></tbody>
+            </table>
+
+            <div class="date-rows">
+                <label style="font-weight:600;font-size:12.5px;color:var(--blue)">Thời gian gieo quẻ:</label>
+                <div class="date-row">
+                    <select id="sel-ngay"></select> /
+                    <select id="sel-thang"></select> /
+                    <select id="sel-nam"></select>
+                </div>
+                <div class="date-row">
+                    <span>Lúc:</span>
+                    <select id="sel-gio"></select> :
+                    <select id="sel-phut"></select>
+                </div>
+            </div>
+
+            <button class="btn-lap" id="btn-lap">AN QUẺ</button>
+        </div>
+    </div>
+
+    <div id="dashboard-screen">
+        <header class="dashboard-header">
+            <h1>HỆ THỐNG LUẬN GIẢI LỤC HÀO</h1>
+            <button id="btn-recast" class="btn-recast"><span>↺</span> Lập Quẻ Mới</button>
+        </header>
+
+        <div class="app-grid">
+
+            <div class="panel mang-1">
+                <div class="panel-title">Mảng 1: Trang Dịch Quái</div>
+                <div class="panel-content" style="background:#fafbfc">
+                    <div id="result-area">
+                        <div id="capture-area"></div>
+                        <button id="btn-export" class="btn-export">📸 TẢI ẢNH QUẺ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel mang-2">
+                <div class="panel-title">Mảng 2: Phân Tích Vượng Suy & Logic</div>
+                <div class="panel-content">
+                    <div id="mang2-content">
+
+                        <div class="m2-section">
+                            <div class="m2-h3">1. Dụng Thần</div>
+                            <select id="sel-dung-than" class="m2-select"></select>
+                            <div id="m2-dungthan-detail" class="m2-text" style="margin-top:4px"></div>
+                        </div>
+
+                        <div class="m2-section">
+                            <div class="m2-h3">2. Thế - Ứng</div>
+                            <div id="m2-the-detail" class="m2-text m2-box"></div>
+                            <div id="m2-ung-detail" class="m2-text m2-box"></div>
+                            <div class="m2-text"
+                                style="margin-top:4px;padding-left:6px;border-left:2px solid var(--purple)">
+                                Quan hệ Thế - Ứng:
+                                <span id="m2-quanhe-the-ung" style="font-weight:600;color:var(--purple)"></span>
+                            </div>
+                        </div>
+
+                        <div class="m2-section">
+                            <div class="m2-h3">3. Thế - Dụng Thần</div>
+                            <div id="m2-quanhe-dt-the" class="m2-text"
+                                style="font-weight:600;font-size:11.5px;padding:4px 6px;background:#f0f6fc;border:1px solid #d4e3f3;border-radius:4px;color:#1b4d82">
+                            </div>
+                        </div>
+
+                        <div class="m2-section">
+                            <div class="m2-h3">4. Hào Động & Biến</div>
+                            <div id="m2-haodong-detail" class="m2-text"></div>
+                        </div>
+
+                        <div class="m2-section">
+                            <div class="m2-h3">5. Hào Ám Động</div>
+                            <div id="m2-amdong-detail" class="m2-text"></div>
+                        </div>
+
+                        <div class="m2-section">
+                            <div class="m2-h3">6. Nguyên Thần & Kỵ Thần</div>
+                            <div id="m2-ntkt-detail" class="m2-text"></div>
+                        </div>
+
+                        <div class="m2-section">
+                            <div class="m2-h3">7. Ứng Kỳ</div>
+                            <div id="m2-ungky-detail" class="m2-text m2-box"
+                                style="background:#f7f9fa;border-color:#e4e7ec"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel mang-3">
+                <div class="panel-title">
+                    Mảng 3: Ghi Chú & Luận Giải Thủ Công
+                    <button id="btn-export-pdf" class="btn-export-pdf" title="Xuất PDF (Mảng 1 + Ghi chú)">📄 Xuất PDF</button>
+                </div>
+                <div class="panel-content" style="padding:8px">
+                    <textarea id="note-textarea-m3" class="note-textarea" placeholder="Nhập ghi chú luận giải của bạn tại đây..."></textarea>
+                </div>
+            </div>
+
+            <div class="panel mang-4">
+                <div class="panel-title">Mảng 4: Gợi ý tự động (Dựa vào mảng 3)</div>
+                <div class="panel-content">
+                    <div class="placeholder-content">[AI Gợi Ý Chờ Bổ Theo Nội Dung]</div>
+                </div>
+            </div>
+
+            <div class="panel mang-5">
+                <div class="panel-title">Mảng 5: Thông tin chung & Phong thủy & Chủ Đề</div>
+                <div class="panel-content">
+                    <div id="mang5-content"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="note-render-hidden"></div>
+
+    <!-- CÁC FILE SCRIPT ĐÃ ĐƯỢC TÁCH RIÊNG -->
+    <script src="core.js"></script>
+    <script src="mang1.js"></script>
+    <script src="mang2.js"></script>
+    <script src="mang5.js"></script>
+    <script src="main.js"></script>
+
+</body>
+</html>
